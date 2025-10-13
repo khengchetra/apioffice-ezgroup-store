@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\Organization_Structure\DepartmentController;
 use App\Http\Controllers\Api\Organization_Structure\PositionController;
+use App\Http\Controllers\Api\Products\CategoryController;
+use App\Http\Controllers\Api\Products\ProductController;
 use App\Http\Controllers\Api\service\BranchController;
 use App\Http\Controllers\Api\UserManagment\RoleController;
 use App\Http\Controllers\Api\UserManagment\UserController;
@@ -74,3 +76,20 @@ Route::middleware('auth:sanctum')->post('/check-permission', [PermissionControll
 
 // Combined Master Data API
 Route::middleware('auth:sanctum')->get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/categories', [CategoryController::class, 'index'])->name('index');
+    Route::get('/categories/{id}', [CategoryController::class, 'show'])->name('show');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('store');
+    Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('update');
+    Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('destroy');
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+    Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
+    Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+    Route::put('/products/{id}', [ProductController::class, 'update'])->name('products.update');
+    Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::post('/products/check-code', [ProductController::class, 'checkProductCode'])->name('products.check-code');
+});

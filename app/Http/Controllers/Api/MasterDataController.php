@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\Position;
 use App\Models\Role;
 use App\Models\Department;
+use App\Models\Category;
 use Illuminate\Http\Request;
 
 class MasterDataController extends Controller
@@ -19,6 +20,7 @@ class MasterDataController extends Controller
         $positions = Position::where('is_show', true)->get(['id', 'position_name', 'remark']);
         $roles = Role::where('is_show', true)->get(['id', 'role_name', 'remark']);
         $departments = Department::where('is_show', true)->get(['id', 'department_name', 'remark']);
+        $categories = Category::where('is_show', true)->get(['id', 'name_category', 'remark']);
 
         return response()->json([
             'genders' => $genders,
@@ -26,6 +28,7 @@ class MasterDataController extends Controller
             'positions' => $positions,
             'roles' => $roles,
             'departments' => $departments,
+            'categories' => $categories,
         ]);
     }
 }
