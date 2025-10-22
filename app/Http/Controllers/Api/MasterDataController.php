@@ -9,6 +9,8 @@ use App\Models\Position;
 use App\Models\Role;
 use App\Models\Department;
 use App\Models\Category;
+use App\Models\Size;
+use App\Models\Color;
 use Illuminate\Http\Request;
 
 class MasterDataController extends Controller

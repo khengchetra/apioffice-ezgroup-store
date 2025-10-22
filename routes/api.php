@@ -7,8 +7,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\Organization_Structure\DepartmentController;
 use App\Http\Controllers\Api\Organization_Structure\PositionController;
+use App\Http\Controllers\Api\Products\Attribute\AttributeController;
 use App\Http\Controllers\Api\Products\CategoryController;
-use App\Http\Controllers\Api\Products\ProductController;
+use App\Http\Controllers\Api\Products\ProductController\ProductController;
+use App\Http\Controllers\Api\Request\ReqestCategoryController;
 use App\Http\Controllers\Api\service\BranchController;
 use App\Http\Controllers\Api\UserManagment\RoleController;
 use App\Http\Controllers\Api\UserManagment\UserController;
@@ -85,11 +87,39 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('destroy');
 });
 
+
+Route::middleware('auth:sanctum')->group(function () {
+    // Original routes
+    Route::get('/reqest-categories', [ReqestCategoryController::class, 'index'])->name('index');
+    Route::get('/reqest-categories/{id}', [ReqestCategoryController::class, 'show'])->name('show');
+    Route::post('/reqest-categories', [ReqestCategoryController::class, 'store'])->name('store');
+    Route::put('/reqest-categories/{id}', [ReqestCategoryController::class, 'update'])->name('update');
+    Route::delete('/reqest-categories/{id}', [ReqestCategoryController::class, 'destroy'])->name('destroy');  
+    // New routes
+    Route::get('/reqest-categories-active/list', [ReqestCategoryController::class, 'getActiveCategories'])->name('getActiveCategories');
+    Route::patch('/reqest-categories/{id}/toggle-active', [ReqestCategoryController::class, 'updateActiveStatus'])->name('updateActiveStatus');
+});
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/attributes', [AttributeController::class, 'index'])->name('attributes.index');
+    Route::get('/attributes/{id}', [AttributeController::class, 'show'])->name('attributes.show');
+    Route::post('/attributes', [AttributeController::class, 'store'])->name('attributes.store');
+    Route::put('/attributes/{id}', [AttributeController::class, 'update'])->name('attributes.update');
+    Route::delete('/attributes/{id}', [AttributeController::class, 'destroy'])->name('attributes.destroy');
+});
+
+// routes/api.php
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
     Route::put('/products/{id}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('products.destroy');
-    Route::post('/products/check-code', [ProductController::class, 'checkProductCode'])->name('products.check-code');
+    Route::get('/attribute/select', [ProductController::class, 'Attribute']);
+    Route::get('/attribute-values/select', [ProductController::class, 'AttributeValue']);
+    Route::patch('/products/{id}/toggle-active', [ProductController::class, 'updateActiveStatus'])->name('products.updateActiveStatus');
+    Route::post('/products/check-code', [ProductController::class, 'checkProductCode'])->name('products.checkProductCode');
+    Route::get('/mobile/products', [ProductController::class, 'randomProducts'])->name('products.mobile.index');
+    Route::get('/mobile/products/search', [ProductController::class, 'searchProducts'])->name('products.mobile.search');
 });

@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use phpDocumentor\Reflection\Types\Nullable;
 
 return new class extends Migration
 {
@@ -12,23 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('products', function (Blueprint $table) {
+        Schema::create('reqestcategory', function (Blueprint $table) {
             $table->id();
-            $table->string('product_code')->unique();
-            $table->text('image')->nullable();
-            $table->string('name_kh')->nullable();
-            $table->string('name_en')->nullable();
-            $table->string('name_cn')->nullable();
-            $table->string('category_id')->nullable();
-            $table->unsignedBigInteger('user_id');
+            $table->string('name');
             $table->text('remark')->nullable();
             $table->boolean('is_active')->default(false);
             $table->boolean('is_show')->default(true);
-            $table->timestamps();
-            
-
+            $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            
+            $table->timestamps();
         });
+
+        
     }
 
     /**
@@ -36,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('products');
+        Schema::dropIfExists('reqestcategory');
     }
 };

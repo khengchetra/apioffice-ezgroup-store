@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
@@ -13,19 +15,31 @@ class Product extends Model
         'name_en',
         'name_cn',
         'category_id',
-        'qty',
         'user_id',
         'remark',
-        'is_show'
+        'is_active',
+        'is_show',
     ];
 
-    protected $casts = [
-        'is_show' => 'boolean',
-        'qty' => 'integer',
-    ];
+    // Concatenate names for display
+    protected $appends = ['display_name'];
 
-    public function creator()
+    public function getDisplayNameAttribute()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return implode(' / ', array_filter([
+            $this->name_kh,
+            $this->name_en,
+            $this->name_cn,
+        ]));
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class)->where('is_show', true);
     }
 }

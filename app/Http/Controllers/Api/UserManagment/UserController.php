@@ -88,28 +88,28 @@ class UserController extends Controller
             'start_work' => 'nullable|date',
             'bank_account_number' => 'nullable|string|max:255|unique:users',
             'other' => 'nullable|string',
-            'gender_id' => 'nullable|exists:gender,id', // Fixed table name to match model (assuming Genders model/table)
+            'gender_id' => 'nullable|exists:gender,id',
             'role_id' => 'required|exists:roles,id',
             'branch_id' => 'nullable|exists:branches,id',
             'department_id' => 'nullable|exists:departments,id',
             'position_id' => 'nullable|exists:positions,id',
-            'user_id' => 'nullable|exists:users,id', // Added validation for user_id (creator)
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'errors' => $validator->errors()
-            ], 422); 
+            ], 422);
         }
 
         $data = $request->all();
         $data['password'] = Hash::make($request->password);
         $data['is_show'] = 1;
-        $data['user_id'] = auth()->id(); // Fixed: Set creator as current authenticated user
+        $data['user_id'] = auth()->id();
 
         $user = User::create($data);
-        $user->load(['gender', 'role', 'branch', 'department', 'position', 'creator']); // Added 'creator' to load
+        $user->load(['gender', 'role', 'branch', 'department', 'position', 'creator']);
         
         $this->addImageUrls($user);
 
@@ -325,15 +325,68 @@ class UserController extends Controller
         ]);
     }
 
+    public function updateCoverImage(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'cover_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        if ($request->hasFile('cover_image')) {
+            if ($user->cover_image) {
+                Storage::disk('public')->delete('user/cover/' . $user->cover_image);
+            }
+            $user->update(['cover_image' => $this->saveImage($request->file('cover_image'), 'user/cover')]);
+        }
+
+        $user->load(['gender', 'role', 'branch', 'department', 'position']);
+        $this->addImageUrls($user);
+
+        return response()->json([
+            'success' => true,
+            'data' => $user,
+            'message' => 'Cover image updated successfully'
+        ]);
+    }
+
     // Helper methods
     private function saveImage($file, $path)
     {
         $timestamp = Carbon::now()->format('YmdHis');
         $randomString = Str::random(100);
-        $extension = $file->getClientOriginalExtension();
-        $filename = "{$timestamp}_{$randomString}.{$extension}";
+        $filename = "{$timestamp}_{$randomString}.webp";
 
-        $file->storeAs($path, $filename, 'public');
+        // Get the image mime type
+        $mime = $file->getClientOriginalExtension();
+        
+        // Create image resource based on mime type
+        switch (strtolower($mime)) {
+            case 'jpeg':
+            case 'jpg':
+                $image = imagecreatefromjpeg($file->getPathname());
+                break;
+            case 'png':
+                $image = imagecreatefrompng($file->getPathname());
+                break;
+            case 'webp':
+                $image = imagecreatefromwebp($file->getPathname());
+                break;
+            default:
+                throw new \Exception('Unsupported image type');
+        }
+
+        // Convert and save as webp
+        $fullPath = storage_path('app/public/' . $path . '/' . $filename);
+        imagewebp($image, $fullPath, 80); // 80 is the quality setting for webp
+        imagedestroy($image);
 
         return $filename;
     }
