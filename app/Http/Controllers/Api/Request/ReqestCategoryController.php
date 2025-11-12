@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Request;
 
 use App\Http\Controllers\Controller;
 use App\Models\ReqestCategory;
+use App\Services\PermissionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -79,18 +80,39 @@ class ReqestCategoryController extends Controller
         ], 200);
     }
 
-    // API ថ្មីទី 1: Get name and id where is_show = true and is_active = true
+    protected $permissionService;
+
+    public function __construct(PermissionService $permissionService)
+    {
+        $this->permissionService = $permissionService;
+    }
+
+    // API: Get name and id where is_show = true and is_active = true with permission check
     public function getActiveCategories(): JsonResponse
     {
+        $userId = Auth::id();
+
         $categories = ReqestCategory::where('is_show', true)
             ->where('is_active', true)
-            ->select('id', 'name')
+            ->select('id', 'name', 'remark')
             ->orderBy('id', 'desc')
-            ->get();
+            ->get()
+            ->filter(function ($category) use ($userId) {
+                // Check if the user has permission for this reqestcategory_id
+                return $this->permissionService->checkPermission($userId, null, $category->id);
+            })
+            ->map(function ($category) {
+                return [
+                    'id'    => $category->id,
+                    'value' => $category->name,
+                    'label' => $category->remark
+                ];
+            })
+            ->values(); // Reset collection keys after filtering
 
         return response()->json([
             'status' => 'success',
-            'data' => $categories
+            'data'   => $categories
         ], 200);
     }
 

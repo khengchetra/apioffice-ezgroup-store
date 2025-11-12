@@ -12,7 +12,8 @@ class CompilePermission extends Model
         'role_id',
         'permission_id',
         'sub_permission_id',
-        'check_permission_id'
+        'check_permission_id',
+        'reqestcategory_id'
     ];
 
     public function role()
@@ -33,5 +34,10 @@ class CompilePermission extends Model
     public function checkPermission()
     {
         return $this->belongsTo(CheckPermission::class);
+    }
+
+    public function reqestCategory()
+    {
+        return $this->belongsTo(ReqestCategory::class);
     }
 }

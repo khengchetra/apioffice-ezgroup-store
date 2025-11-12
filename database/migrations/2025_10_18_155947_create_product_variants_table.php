@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('product_id');
             $table->string('sku')->unique(); // e.g. TSHIRT-RED-M
+            $table->string('name_variant')->nullable();
             $table->decimal('price', 10, 2)->default(0);
             $table->integer('stock')->default(0);
             $table->text('image')->nullable();

@@ -94,6 +94,7 @@ class ProductController extends Controller
             'variants' => 'nullable|array',
             'variants.*.attributes' => 'nullable|array',
             'variants.*.attributes.*' => 'exists:attribute_values,id',
+            'variants.*.name_variant' => 'nullable|string|max:255',
             'variants.*.price' => 'required|numeric|min:0',
             'variants.*.stock' => 'required|integer|min:0',
             'variants.*.image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif,bmp,tiff',
@@ -152,6 +153,7 @@ class ProductController extends Controller
                     $variant = ProductVariant::create([
                         'product_id' => $product->id,
                         'sku' => $sku,
+                        'name_variant' => $variantData['name_variant'] ?? null,
                         'price' => $variantData['price'],
                         'stock' => $variantData['stock'],
                         'image' => $variantImagePath,
@@ -173,6 +175,7 @@ class ProductController extends Controller
                 ProductVariant::create([
                     'product_id' => $product->id,
                     'sku' => $sku,
+                    'name_variant' => null,
                     'price' => 0,
                     'stock' => 0,
                     'image' => $imagePath,
@@ -217,6 +220,7 @@ class ProductController extends Controller
             'variants.*.id' => 'nullable|integer|exists:product_variants,id',
             'variants.*.attributes' => 'nullable|array',
             'variants.*.attributes.*' => 'exists:attribute_values,id',
+            'variants.*.name_variant' => 'nullable|string|max:255',
             'variants.*.price' => 'required|numeric|min:0',
             'variants.*.stock' => 'required|integer|min:0',
             'variants.*.image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif,bmp,tiff',
@@ -293,6 +297,7 @@ class ProductController extends Controller
 
                             $variant->update([
                                 'sku' => $sku,
+                                'name_variant' => $variantData['name_variant'] ?? $variant->name_variant,
                                 'price' => $variantData['price'],
                                 'stock' => $variantData['stock'],
                                 'image' => $variantImagePath,
@@ -322,6 +327,7 @@ class ProductController extends Controller
                         $variant = ProductVariant::create([
                             'product_id' => $product->id,
                             'sku' => $sku,
+                            'name_variant' => $variantData['name_variant'] ?? null,
                             'price' => $variantData['price'],
                             'stock' => $variantData['stock'],
                             'image' => $variantImagePath,
@@ -376,6 +382,7 @@ class ProductController extends Controller
                 ProductVariant::create([
                     'product_id' => $product->id,
                     'sku' => $sku,
+                    'name_variant' => null,
                     'price' => 0,
                     'stock' => 0,
                     'image' => $imagePath, // ✅ Uses product image (old or new)
@@ -631,6 +638,101 @@ class ProductController extends Controller
                 'per_page' => $products->perPage(),
             ]
         ], 200);
+    }
+
+    public function mobileShow($id): JsonResponse
+    {
+        try {
+            $product = Product::with(['variants.attributes.attributeValue.attribute'])
+                ->where('is_show', true)
+                ->where('is_active', true)
+                ->select('id', 'product_code', 'name_kh', 'name_en', 'name_cn', 'image', 'remark')
+                ->findOrFail($id);
+
+            // Add image URLs
+            if ($product->image) {
+                $product->image_url = asset('storage/ProductManager/Product/' . $product->image);
+            }
+
+            // Group variants by color and prepare data structure
+            $colorGroups = [];
+
+            $product->variants->each(function ($variant) use (&$colorGroups) {
+                if ($variant->image) {
+                    $variant->image_url = asset('storage/ProductManager/product_variants/' . $variant->image);
+                }
+
+                // Extract color and size attributes
+                $colorAttr = null;
+                $sizeAttr = null;
+
+                foreach ($variant->attributes as $attribute) {
+                    if ($attribute->attributeValue->attribute->name === 'Color' || 
+                        $attribute->attributeValue->attribute->name === 'color') {
+                        $colorAttr = $attribute->attributeValue;
+                    } elseif ($attribute->attributeValue->attribute->name === 'Size' || 
+                            $attribute->attributeValue->attribute->name === 'size') {
+                        $sizeAttr = $attribute->attributeValue;
+                    }
+                }
+
+                if ($colorAttr && $sizeAttr) {
+                    $colorId = $colorAttr->id;
+                    $sizeId = $sizeAttr->id;
+
+                    // Initialize color group if not exists
+                    if (!isset($colorGroups[$colorId])) {
+                        $colorGroups[$colorId] = [
+                            'color_id' => $colorId,
+                            'color_name' => $colorAttr->value,
+                            'name_variant' => $variant->name_variant, // Add name_variant here
+                            'color_hex' => $colorAttr->hex_code,
+                            'color_image' => $variant->image_url ?? null,
+                            'sizes' => []
+                        ];
+                    }
+
+                    // Add size variant to this color group
+                    $colorGroups[$colorId]['sizes'][] = [
+                        'size_id' => $sizeId,
+                        'size_name' => $sizeAttr->value,
+                        'variant_id' => $variant->id,
+                        'sku' => $variant->sku,
+                        'price' => $variant->price,
+                        'stock' => $variant->stock,
+                        // Remove image and image_url from sizes as per your requirement
+                    ];
+                }
+            });
+
+            // Convert associative arrays to indexed arrays
+            $colorGroups = array_values($colorGroups);
+
+            // Prepare final response data
+            $responseData = [
+                'id' => $product->id,
+                'product_code' => $product->product_code,
+                'name_kh' => $product->name_kh,
+                'name_en' => $product->name_en,
+                'name_cn' => $product->name_cn,
+                'image' => $product->image,
+                'image_url' => $product->image_url ?? null,
+                'remark' => $product->remark,
+                'colors' => $colorGroups
+            ];
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $responseData
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Mobile product details failed: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to retrieve product details'
+            ], 404);
+        }
     }
 
 

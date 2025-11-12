@@ -43,7 +43,7 @@ class AttributeController extends Controller
             'values' => 'required|array',
             'values.*' => 'required|string|max:255',
             'hex_codes' => 'nullable|array',
-            'hex_codes.*' => 'nullable|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', // Validate hex codes
+            'hex_codes.*' => 'nullable|string|regex:/^#?[A-Fa-f0-9]{3,6}$/',
             'remark' => 'nullable|string'
         ]);
 
@@ -103,7 +103,7 @@ class AttributeController extends Controller
             'values' => 'required|array',
             'values.*' => 'required|string|max:255',
             'hex_codes' => 'nullable|array',
-            'hex_codes.*' => 'nullable|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', // Validate hex codes
+            'hex_codes.*' => 'nullable|string|regex:/^#?[A-Fa-f0-9]{3,6}$/',
             'remark' => 'nullable|string'
         ]);
 

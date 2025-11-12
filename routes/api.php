@@ -122,4 +122,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/products/check-code', [ProductController::class, 'checkProductCode'])->name('products.checkProductCode');
     Route::get('/mobile/products', [ProductController::class, 'randomProducts'])->name('products.mobile.index');
     Route::get('/mobile/products/search', [ProductController::class, 'searchProducts'])->name('products.mobile.search');
+    Route::get('/mobile/products/{id}', [ProductController::class, 'mobileShow'])->name('products.mobile.show');
 });
